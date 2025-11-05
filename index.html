@@ -25,16 +25,11 @@
             background: beige;
             margin: 0 auto;
             max-width: 1600px;
-            padding: 1em;
-        }
-
-        /* shadowPart styling of shadowDOM */
-        image-reveal::part(container) {
-            border: 2px solid white;
+            padding: 0 1em;
         }
 
         image-container {
-            /* is a UNdefined Custom Element, useful for styling without creating a DIV soup */
+            /* is a UNdefined Custom Element, useful for CSS styling without creating a DIV soup */
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 10px;
@@ -44,6 +39,22 @@
             border: 2px solid red;
         }
 
+        /* yes, you can style shadowDOM with global CSS */
+        image-reveal::part(container) {
+            border: 2px solid white;
+        }
+
+        image-reveal::part(circle) {
+            stroke: red;
+            stroke-width: 10;
+        }
+
+        image-reveal::part(hotspot-label) {
+            padding: .2em;
+        }
+
+
+        /* style other Web Components */
         code-embed::part(textarea),
         source-viewer::part(source) {
             /* background: navy;
@@ -71,7 +82,7 @@
 
             <web-component-usage id="Utrecht2">
                 <image-reveal showspots src="utrecht_castle.jpg" blur="5" minradius="100" maxradius="200">
-                    <hotspot x="40%" y="20%">Castle Oudaen was built in 1276</hotspot>
+                    <hotspot x="40%" y="20%">Utrecht City-castle Oudaen was built in 1276</hotspot>
                     <hotspot x="70%" y="70%">Utrecht lower-level warfs are unique in the world</hotspot>
                     <hotspot x="80%" y="50%">Utrecht small innercity has banned all traffic except bicycles</hotspot>
                 </image-reveal>

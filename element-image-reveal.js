@@ -13,6 +13,7 @@
                 const blurredCSS = `filter:blur(${this.getAttribute('blur') || 5}px)`;
                 const minimal_radius = Number(this.getAttribute('minradius') || 100);
                 const maximum_radius = Number(this.getAttribute('maxradius') || 200);
+                const stroke = this.getAttribute('stroke') || "white";
                 // ------------------------------------------------------------ HELPER FUNCTIONS CREATE DOM
                 // best helper function ever:
                 const createElement = (tag, props = {}) => Object.assign(document.createElement(tag), props);
@@ -32,13 +33,9 @@
                 const clipCircle = (r = 0, x = 0, y = 0) => {
                     // -------------------------------------------------------- calculate actual hotspot positions
                     const { offsetWidth, offsetHeight } = DIV;
-                    const hotspotsWithPixels = HOTSPOTS.map(({ node, x, y }) => ({
-                        node,
-                        x: parseCoord(x, offsetWidth),
-                        y: parseCoord(y, offsetHeight)
-                    }));
                     // -------------------------------------------------------- find nearby hotspots
-                    const spotted = hotspotsWithPixels
+                    const spotted = HOTSPOTS
+                        .map(({ node, x, y }) => ({ node, x: parseCoord(x, offsetWidth), y: parseCoord(y, offsetHeight) }))
                         .map(({ node, x, y }) => ({ node, distance: Math.hypot(mouseX - x, mouseY - y) }))
                         .sort((a, b) => a.distance - b.distance)
                         .filter(hotspot => hotspot.distance < 60); // distance from x,y
@@ -52,11 +49,13 @@
                     CIRCLE.setAttribute('cy', y);
                     CIRCLE.setAttribute('r', r);
                     // console.log('clipCircle:', r, x, y, spotted);
+                    // -------------------------------------------------------- show hotspot label
                     // shadowDOM is configured for Manual SLOT assigment
-                    // assigns ONE <hotspot> to <slot> or empty array for no nodes. A JS "unassign" method would be nice here.
+                    // assigns ONE <hotspot> to <slot> or empty array for no nodes. A DOM "unassign" method would be nice here.
                     HOTSLOT.assign(...(spotted.length ? [spotted[0].node] : []));
                 };
                 // ------------------------------------------------------------ CIRCLE ANIMATION FUNCTIONS
+                // when the user clicks, animate to large radius, on mouseup animate to small radius
                 const animateRadius = (r) => (targetRadius = r, animating || (animating = true, animateCircle()));
                 const animateCircle = () => {
                     if (!animating) return;
@@ -109,35 +108,38 @@
                 // DIV.onpointerdown = DIV.onmousedown;
                 //------------------------------------------------------------- PROCESS PROXIMITY HOTSPOT
                 HOTSPOTS = [...this.querySelectorAll('hotspot')].map(hotspot => ({
-                    node: hotspot, x: hotspot.getAttribute('x'), y: hotspot.getAttribute('y')
+                    node: hotspot,
+                    x: hotspot.getAttribute('x'),
+                    y: hotspot.getAttribute('y')
                 }));
                 // ------------------------------------------------------------ ON RESIZE
                 window.addEventListener('resize', () => CLEARIMG.onload()); // force all recalculations on resize
                 // ------------------------------------------------------------ MORE DOM ELEMENTS
                 DIV.append(
                     // -------------------------------------------------------- stacked images
-                    /* <IMG> */ createIMG('blur'),
-                    /* <IMG> */ CLEARIMG = createIMG('clear', {
-                        onload: () => {
-                            DIV.setheight(); // adjust DIV height when image is loaded
+                    createIMG('blur'),
+                    CLEARIMG = createIMG('clear', {
+                        onload: () => { // after large IMG loads
+                            // set correct height for DIV container, then calculate hotspot positions
+                            DIV.setheight();
                             clipCircle(100, 255, 120); // set initial blurred state
                             // -------------------------------------------------------- hotspot markers
                             // show hotspots (with percentages) in now resized IMG
                             if (this.hasAttribute('showspots')) {
                                 const { offsetWidth, offsetHeight } = DIV;
-                                SVG.querySelector('#hotspot-markers').innerHTML = HOTSPOTS.map(({ x, y }) => {
-                                    return `<circle cx='${parseCoord(x, offsetWidth)}' cy='${parseCoord(y, offsetHeight)}' r='5' fill='white' stroke='red' stroke-width='2'/>`;
-                                }).join('');
+                                SVG.querySelector('#hotspot-markers').innerHTML = HOTSPOTS.map(({ x, y }) =>
+                                    `<circle part="marker" cx='${parseCoord(x, offsetWidth)}' cy='${parseCoord(y, offsetHeight)}' r='5' fill='white' stroke='red' stroke-width='2'/>`
+                                ).join('');
                             }
                         }
                     }),
                     // -------------------------------------------------------- circle SVG border
-                    /* <SVG> */ SVG = Object.assign(document.createElementNS('http://www.w3.org/2000/svg', 'svg'), {
-                        innerHTML: `<circle fill='none' stroke='white' stroke-width='5'/><g id='hotspot-markers'/>`
+                    SVG = Object.assign(document.createElementNS('http://www.w3.org/2000/svg', 'svg'), {
+                        innerHTML: `<circle part="circle" fill='none' stroke='${stroke}' stroke-width='5'/><g id='hotspot-markers'/>`
                     }), // SVG with proper NameSpace
                     // -------------------------------------------------------- displays text label for nearest hotspot
                     // shadowDOM is configured with Manual SLOT assignment!
-                    /* <SLOT> */ HOTSLOT = createElement('slot', {
+                    HOTSLOT = createElement('SLOT', {
                         part: 'hotspot-label', // allow user to style with ::part
                         innerHTML: HOTSPOTS.length ? `Find the ${HOTSPOTS.length} hotspots` : ``
                     })
