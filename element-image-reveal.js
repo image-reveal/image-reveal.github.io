@@ -35,7 +35,7 @@
                     CIRCLE.setAttribute('cx', x);
                     CIRCLE.setAttribute('cy', y);
                     CIRCLE.setAttribute('r', r);
-                    console.log('clipCircle:', r, x, y, spotted);
+                    // console.log('clipCircle:', r, x, y, spotted);
                     // shadowDOM is configured for Manual SLOT assigment
                     // assigns ONE <hotspot> to <slot> or empty array for no nodes. A JS "unassign" method would be nice here.
                     HOTSLOT.assign(...(spotted.length ? [spotted[0].node] : []));
@@ -89,10 +89,10 @@
                             }
                         }), // end container DIV
                     ); // end append
-                    // ------------------------------------------------------------ // todo: POINTER EVENTS for touch support
-                    // DIV.onpointerdown = DIV.onmousedown;
-                    //------------------------------------------------------------- PROCESS PROXIMITY HOTSPOT
-                    HOTSPOTS = [...this.querySelectorAll('hotspot')].map(hotspot => ({
+                // ------------------------------------------------------------ // todo: POINTER EVENTS for touch support
+                // DIV.onpointerdown = DIV.onmousedown;
+                //------------------------------------------------------------- PROCESS PROXIMITY HOTSPOT
+                HOTSPOTS = [...this.querySelectorAll('hotspot')].map(hotspot => ({
                     node: hotspot, x: hotspot.getAttribute('x'), y: hotspot.getAttribute('y')
                 }));
                 // ------------------------------------------------------------ ON RESIZE
