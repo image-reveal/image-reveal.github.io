@@ -24,10 +24,20 @@
         main {
             background: beige;
             margin: 0 auto;
-            max-width: 1600px;
             padding: 0 1em;
         }
 
+        @media (min-width: 1200px) {
+            main {
+                max-width: 90vw;
+            }
+        }
+
+        @media (max-width: 1199px) {
+            main {
+                max-width: 100vw;
+            }
+        }
         image-container {
             /* is a UNdefined Custom Element, useful for CSS styling without creating a DIV soup */
             display: grid;
@@ -46,7 +56,7 @@
 
         image-reveal::part(circle) {
             stroke: red;
-            stroke-width: 10;
+            stroke-width: 5;
         }
 
         image-reveal::part(hotspot-label) {
@@ -81,7 +91,7 @@
             </web-component-usage>
 
             <web-component-usage id="Utrecht2">
-                <image-reveal showspots src="utrecht_castle.jpg" blur="5" minradius="100" maxradius="200">
+                <image-reveal showspots src="utrecht_castle.jpg" blur="5" minradius="10%" maxradius="20%">
                     <hotspot x="40%" y="20%">Utrecht City-castle Oudaen was built in 1276</hotspot>
                     <hotspot x="70%" y="70%">Utrecht lower-level warfs are unique in the world</hotspot>
                     <hotspot x="80%" y="50%">Utrecht small innercity has banned all traffic except bicycles</hotspot>

@@ -11,8 +11,8 @@
                 // ------------------------------------------------------------ SETTINGS from Attributes
                 const imgsrc = this.getAttribute('src') || '';
                 const blurredCSS = `filter:blur(${this.getAttribute('blur') || 5}px)`;
-                const minimal_radius = Number(this.getAttribute('minradius') || 100);
-                const maximum_radius = Number(this.getAttribute('maxradius') || 200);
+                const minimal_radius = this.getAttribute('minradius') || '10%';
+                const maximum_radius = this.getAttribute('maxradius') || '10%';
                 const stroke = this.getAttribute('stroke') || "white";
                 // ------------------------------------------------------------ HELPER FUNCTIONS CREATE DOM
                 // best helper function ever:
@@ -22,17 +22,20 @@
                 const parseCoord = (value, dimension) => {
                     if (!value) return 0;
                     const str = String(value).trim();
-                    return str.endsWith('%') ? (parseFloat(str) / 100) * dimension : parseFloat(str);
+                    return ~~(str.endsWith('%') ? (parseFloat(str) / 100) * dimension : parseFloat(str));
                 };
                 // ------------------------------------------------------------ STATE
                 let animating = false; // is circle radius animating
                 let mouseX = 0, mouseY = 0;
-                let currentRadius = minimal_radius;
-                let targetRadius = minimal_radius;
+                let currentRadius = parseCoord(minimal_radius, 100); // Parse initial radius
+                let targetRadius = parseCoord(minimal_radius, 100);
                 // ------------------------------------------------------------ Create/Update SVG border circle
                 const clipCircle = (r = 0, x = 0, y = 0) => {
                     // -------------------------------------------------------- calculate actual hotspot positions
                     const { offsetWidth, offsetHeight } = DIV;
+                    // -------------------------------------------------------- parse radius (support percentages)
+                    const radiusPixels = parseCoord(r, Math.min(offsetWidth, offsetHeight));
+                    const radiusPercent = String(r).endsWith('%') ? parseFloat(r) : (radiusPixels / Math.min(offsetWidth, offsetHeight) * 100);
                     // -------------------------------------------------------- find nearby hotspots
                     const spotted = HOTSPOTS
                         .map(({ node, x, y }) => ({ node, x: parseCoord(x, offsetWidth), y: parseCoord(y, offsetHeight) }))
@@ -42,12 +45,13 @@
                     // -------------------------------------------------------- calculate percentages
                     const xPercent = offsetWidth ? (x / offsetWidth * 100) : 0;
                     const yPercent = offsetHeight ? (y / offsetHeight * 100) : 0;
+                    console.log(radiusPercent)
                     // -------------------------------------------------------- style CSS! circle
-                    CLEARIMG.style.clipPath = `circle(${r}px at ${xPercent}% ${yPercent}%)`; // apply CSS clipPath with percentages
-                    // -------------------------------------------------------- position SVG circle (still uses pixels)
+                    CLEARIMG.style.clipPath = `circle(${radiusPercent - 2}% at ${xPercent}% ${yPercent}%)`; // apply CSS clipPath with percentages
+                    // -------------------------------------------------------- position SVG circle (uses pixels)
                     CIRCLE.setAttribute('cx', x);
                     CIRCLE.setAttribute('cy', y);
-                    CIRCLE.setAttribute('r', r);
+                    CIRCLE.setAttribute('r', radiusPixels || 0); // Ensure no NaN
                     // console.log('clipCircle:', r, x, y, spotted);
                     // -------------------------------------------------------- show hotspot label
                     // shadowDOM is configured for Manual SLOT assigment
@@ -56,7 +60,14 @@
                 };
                 // ------------------------------------------------------------ CIRCLE ANIMATION FUNCTIONS
                 // when the user clicks, animate to large radius, on mouseup animate to small radius
-                const animateRadius = (r) => (targetRadius = r, animating || (animating = true, animateCircle()));
+                const animateRadius = (r) => {
+                    const { offsetWidth, offsetHeight } = DIV;
+                    targetRadius = parseCoord(r, Math.min(offsetWidth, offsetHeight));
+                    if (!animating) {
+                        animating = true;
+                        animateCircle();
+                    }
+                };
                 const animateCircle = () => {
                     if (!animating) return;
                     currentRadius += (targetRadius - currentRadius) * 0.2;
@@ -119,16 +130,22 @@
                     // -------------------------------------------------------- stacked images
                     createIMG('blur'),
                     CLEARIMG = createIMG('clear', {
-                        onload: () => { // after large IMG loads
+                        onload: () => { // ------------------------------------ ONLOAD large IMG
                             // set correct height for DIV container, then calculate hotspot positions
                             DIV.setheight();
-                            clipCircle(100, 255, 120); // set initial blurred state
+                            // Parse and set initial radius values
+                            const minDimension = Math.min(DIV.offsetWidth, DIV.offsetHeight);
+                            clipCircle(
+                                targetRadius = currentRadius = parseCoord(minimal_radius, minDimension),
+                                parseCoord("40%", DIV.offsetWidth),
+                                parseCoord("20%", DIV.offsetHeight)
+                            ); // set initial blurred state
                             // -------------------------------------------------------- hotspot markers
                             // show hotspots (with percentages) in now resized IMG
                             if (this.hasAttribute('showspots')) {
-                                const { offsetWidth, offsetHeight } = DIV;
                                 SVG.querySelector('#hotspot-markers').innerHTML = HOTSPOTS.map(({ x, y }) =>
-                                    `<circle part="marker" cx='${parseCoord(x, offsetWidth)}' cy='${parseCoord(y, offsetHeight)}' r='5' fill='white' stroke='red' stroke-width='2'/>`
+                                    `<circle part="marker" cx='${parseCoord(x, DIV.offsetWidth)}' cy='${parseCoord(y, DIV.offsetHeight)}'`
+                                    + ` r='5' fill='white' stroke='red' stroke-width='2'/>`
                                 ).join('');
                             }
                         }
