@@ -47,7 +47,7 @@
                     const yPercent = offsetHeight ? (y / offsetHeight * 100) : 0;
                     console.log(radiusPercent)
                     // -------------------------------------------------------- style CSS! circle
-                    CLEARIMG.style.clipPath = `circle(${radiusPercent - 2}% at ${xPercent}% ${yPercent}%)`; // apply CSS clipPath with percentages
+                    CLEARIMG.style.clipPath = `circle(${radiusPercent}% at ${xPercent}% ${yPercent}%)`; // apply CSS clipPath with percentages
                     // -------------------------------------------------------- position SVG circle (uses pixels)
                     CIRCLE.setAttribute('cx', x);
                     CIRCLE.setAttribute('cy', y);
@@ -135,9 +135,10 @@
                             DIV.setheight();
                             // Parse and set initial radius values
                             const minDimension = Math.min(DIV.offsetWidth, DIV.offsetHeight);
+                            targetRadius = currentRadius = parseCoord(minimal_radius, minDimension);
                             clipCircle(
-                                targetRadius = currentRadius = parseCoord(minimal_radius, minDimension),
-                                parseCoord("40%", DIV.offsetWidth),
+                                "20%",
+                                parseCoord("30%", DIV.offsetWidth),
                                 parseCoord("20%", DIV.offsetHeight)
                             ); // set initial blurred state
                             // -------------------------------------------------------- hotspot markers
