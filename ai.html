@@ -1,0 +1,250 @@
+<script>
+    const template = document.createElement('template');
+    template.innerHTML = `
+    <style>
+        :host {
+            display: inline-block;
+            max-width: 100%;
+        }
+        .image-container {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+            touch-action: none;
+        }
+        .image-container img {
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+        #blurred {
+            display: block;
+            width: 100%;
+            height: auto;
+            filter: blur(15px);
+            pointer-events: none;
+        }
+        #clear {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            clip-path: circle(0px at 0 0);
+            pointer-events: none;
+        }
+    </style>
+    <div class="image-container">
+        <img id="blurred" alt="">
+        <img id="clear" alt="">
+    </div>
+`;
+
+    class ImageReveal extends HTMLElement {
+        constructor() {
+            super();
+            this.attachShadow({ mode: 'open' });
+            this.shadowRoot.appendChild(template.content.cloneNode(true));
+
+            this._container = this.shadowRoot.querySelector('.image-container');
+            this._blurred = this.shadowRoot.getElementById('blurred');
+            this._clear = this.shadowRoot.getElementById('clear');
+
+            this._radius = 100;
+            this._activeRadius = 200;
+            this._currentRadius = this._radius;
+            this._targetRadius = this._radius;
+            this._blurAmount = 15;
+            this._mouseX = 0;
+            this._mouseY = 0;
+            this._hasPointerPosition = false;
+            this._animating = false;
+            this._animFrame = null;
+            this._isPointerDown = false;
+            this._pointerId = null;
+
+            this._handlePointerMove = this._handlePointerMove.bind(this);
+            this._handlePointerLeave = this._handlePointerLeave.bind(this);
+            this._handlePointerDown = this._handlePointerDown.bind(this);
+            this._handlePointerUp = this._handlePointerUp.bind(this);
+            this._handlePointerCancel = this._handlePointerCancel.bind(this);
+            this._animateCircle = this._animateCircle.bind(this);
+        }
+
+        static get observedAttributes() {
+            return ['src', 'blur', 'radius', 'active-radius', 'alt'];
+        }
+
+        connectedCallback() {
+            this._applyAttributes();
+            this._container.addEventListener('pointermove', this._handlePointerMove);
+            this._container.addEventListener('pointerleave', this._handlePointerLeave);
+            this._container.addEventListener('pointerdown', this._handlePointerDown);
+            this._container.addEventListener('pointerup', this._handlePointerUp);
+            this._container.addEventListener('pointercancel', this._handlePointerCancel);
+        }
+
+        disconnectedCallback() {
+            this._container.removeEventListener('pointermove', this._handlePointerMove);
+            this._container.removeEventListener('pointerleave', this._handlePointerLeave);
+            this._container.removeEventListener('pointerdown', this._handlePointerDown);
+            this._container.removeEventListener('pointerup', this._handlePointerUp);
+            this._container.removeEventListener('pointercancel', this._handlePointerCancel);
+            this._cancelAnimation();
+        }
+
+        attributeChangedCallback(name, oldValue, newValue) {
+            if (oldValue === newValue) return;
+            switch (name) {
+                case 'src':
+                    this._updateSrc(newValue);
+                    break;
+                case 'blur':
+                    this._updateBlur(newValue);
+                    break;
+                case 'radius':
+                case 'active-radius':
+                    this._updateRadii(
+                        name === 'radius' ? newValue : this.getAttribute('radius'),
+                        name === 'active-radius' ? newValue : this.getAttribute('active-radius')
+                    );
+                    break;
+                case 'alt':
+                    this._updateAlt(newValue);
+                    break;
+            }
+        }
+
+        _applyAttributes() {
+            this._updateSrc(this.getAttribute('src'));
+            this._updateBlur(this.getAttribute('blur'));
+            this._updateRadii(this.getAttribute('radius'), this.getAttribute('active-radius'));
+            this._updateAlt(this.getAttribute('alt'));
+        }
+
+        _updateSrc(value) {
+            const url = value || '';
+            this._blurred.src = url;
+            this._clear.src = url;
+        }
+
+        _updateAlt(value) {
+            const alt = value || '';
+            this._blurred.alt = alt;
+            this._clear.alt = alt;
+        }
+
+        _updateBlur(value) {
+            this._blurAmount = this._parseNumber(value, 15);
+            this._blurred.style.filter = `blur(${this._blurAmount}px)`;
+        }
+
+        _updateRadii(radiusValue, activeRadiusValue) {
+            this._radius = this._parseNumber(radiusValue, 100);
+            this._activeRadius = this._parseNumber(activeRadiusValue, 200);
+
+            if (this._isPointerDown) {
+                this._targetRadius = this._activeRadius;
+                this._startAnimation();
+            } else {
+                this._targetRadius = this._radius;
+                if (!this._animating) {
+                    this._currentRadius = this._radius;
+                    this._updateClipPath(this._currentRadius);
+                }
+            }
+        }
+
+        _handlePointerMove(event) {
+            const rect = this._container.getBoundingClientRect();
+            this._mouseX = event.clientX - rect.left;
+            this._mouseY = event.clientY - rect.top;
+            this._hasPointerPosition = true;
+
+            if (!this._animating) {
+                this._updateClipPath(this._currentRadius);
+            }
+        }
+
+        _handlePointerDown(event) {
+            this._isPointerDown = true;
+            this._targetRadius = this._activeRadius;
+            this._startAnimation();
+            this._pointerId = event.pointerId;
+            if (this._container.setPointerCapture) {
+                this._container.setPointerCapture(event.pointerId);
+            }
+        }
+
+        _handlePointerUp(event) {
+            if (this._pointerId === event.pointerId && this._container.releasePointerCapture) {
+                this._container.releasePointerCapture(event.pointerId);
+                this._pointerId = null;
+            }
+            this._isPointerDown = false;
+            this._targetRadius = this._radius;
+            this._startAnimation();
+        }
+
+        _handlePointerCancel(event) {
+            this._handlePointerUp(event);
+            this._handlePointerLeave();
+        }
+
+        _handlePointerLeave() {
+            this._hasPointerPosition = false;
+            this._isPointerDown = false;
+            this._pointerId = null;
+            this._targetRadius = this._radius;
+            this._currentRadius = this._radius;
+            this._clear.style.clipPath = 'circle(0px at 0 0)';
+            this._cancelAnimation();
+        }
+
+        _startAnimation() {
+            if (!this._animating) {
+                this._animating = true;
+                this._animateCircle();
+            }
+        }
+
+        _cancelAnimation() {
+            if (this._animFrame) {
+                cancelAnimationFrame(this._animFrame);
+                this._animFrame = null;
+            }
+            this._animating = false;
+        }
+
+        _animateCircle() {
+            if (!this._animating) return;
+
+            this._currentRadius += (this._targetRadius - this._currentRadius) * 0.2;
+            this._updateClipPath(this._currentRadius);
+
+            if (Math.abs(this._currentRadius - this._targetRadius) > 0.5) {
+                this._animFrame = requestAnimationFrame(this._animateCircle);
+            } else {
+                this._currentRadius = this._targetRadius;
+                this._updateClipPath(this._currentRadius);
+                this._animating = false;
+                this._animFrame = null;
+            }
+        }
+
+        _updateClipPath(radius) {
+            if (!this._hasPointerPosition) return;
+            this._clear.style.clipPath = `circle(${radius}px at ${this._mouseX}px ${this._mouseY}px)`;
+        }
+
+        _parseNumber(value, fallback) {
+            const num = Number(value);
+            return Number.isFinite(num) ? num : fallback;
+        }
+    }
+
+    customElements.define('image-reveal-ai', ImageReveal);
+</script>
+
+<image-reveal-ai src="https://assets.codepen.io/242759/chicago.jpg" alt="Chicago skyline" radius="100"
+    active-radius="200" blur="15">
+</image-reveal-ai>

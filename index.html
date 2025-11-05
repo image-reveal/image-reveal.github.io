@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Reveal mWeb Component</title>
+
+    <!-- load renderblocking to prevent later FOUCs -->
+    <script id="web-component-loader" src="element-image-reveal.js?name=image-reveal&zone=zone"></script>
+
+    <script src="element-code-embed-lite.js"></script>
+    <script src="element-source-viewer.js"></script>
+
+    <style>
+        /* Global CSS */
+        body {
+            font: 16px arial;
+            background: #222;
+        }
+
+        main {
+            background: beige;
+            margin: 0 auto;
+            max-width: 1700px;
+            padding: 1em;
+        }
+
+        /* shadowPart styling of shadowDOM */
+        image-reveal::part(container) {
+            border: 2px solid white;
+        }
+
+        image-container {
+            /* is a UNdefined Custom Element, useful for styling without creating a DIV soup */
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        image-reveal {
+            border: 2px solid red;
+        }
+
+        code-embed::part(textarea),
+        source-viewer::part(source) {
+            /* background: navy;
+            color: beige; */
+            padding: 0.5em;
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+        <h1>&lt;image-reveal&gt; Web Component</h1>
+        <p>
+            Inspiration: <a href="https://codepen.io/cassidoo/pen/RNrqOOO">a CodePen by Cassidy</a>
+        </p>
+        <p>
+            Amsterdam celebrated its 750th anniversary.
+            <br>A 20 minute train ride east lies Utrecht, with medieval architecture and <b>1250 years older</b>
+            history.
+        </p>
+        <image-container>
+            <web-component-usage id="Utrecht1">
+                <image-reveal src="utrecht_tower.jpg" blur="10"> </image-reveal>
+            </web-component-usage>
+
+            <web-component-usage id="Utrecht2">
+                <image-reveal src="utrecht_castle.jpg" blur="5" minradius="100" maxradius="200">
+                    <hotspot x="255" y="120">Castle Oudaen was built in 1276</hotspot>
+                    <hotspot x="440" y="280">Utrecht lower-level warfs are unique in the world</hotspot>
+                    <hotspot x="489" y="175">Utrecht small innercity has banned all traffic except bicycles</hotspot>
+                </image-reveal>
+            </web-component-usage>
+
+        </image-container>
+
+        <section id="using_web_component">
+            <h3>Load the &lt;image-reveal&gt; Web Component</h3>
+            <code-embed rows="fit" for="web-component-loader"></code-embed>
+            <h3>Use the &lt;image-reveal&gt; Web Component</h3>
+            <code-embed rows="fit" in="Utrecht2"> </code-embed>
+        </section>
+
+        <section slot="sources">
+            <source-viewer src="index.html">
+                <p>
+                    A clean semantic HTML file loads the Web Component
+                </p>
+            </source-viewer>
+            <source-viewer src="element-image-reveal.js" open>
+                Defining the &lt;image-reveal&gt; Web Component
+            </source-viewer>
+        </section>
+    </main>
+</body>
+
+</html>

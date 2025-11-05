@@ -1,0 +1,86 @@
+<style>
+    .image-container {
+        position: relative;
+    }
+
+    .image-container img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        max-width: 100%;
+    }
+
+    #clear {
+        clip-path: circle(0px at 0 0);
+    }
+
+    #blurred {
+        filter: blur(15px);
+    }
+</style>
+
+<div class="image-container">
+    <img id="blurred" src="https://assets.codepen.io/242759/chicago.jpg" alt="" />
+    <img id="clear" src="https://assets.codepen.io/242759/chicago.jpg" alt="" />
+</div>
+
+<script>
+    // Either move your mouse around or click to reveal what's in the blurred image!
+
+    const clearImg = document.getElementById('clear');
+    const container = document.querySelector('.image-container');
+    let radius = 100;
+    let bigRadius = 200;
+    let currentRadius = radius;
+    let targetRadius = radius;
+    let animating = false;
+
+    let mouseX = 0, mouseY = 0;
+    container.addEventListener('mousemove', (e) => {
+        const rect = container.getBoundingClientRect();
+        mouseX = e.clientX - rect.left;
+        mouseY = e.clientY - rect.top;
+
+        if (!animating) {
+            clearImg.style.clipPath = `circle(${currentRadius}px at ${mouseX}px ${mouseY}px)`;
+        }
+    });
+
+    container.addEventListener('mouseleave', () => {
+        clearImg.style.clipPath = 'circle(0px at 0 0)';
+        animating = false;
+    });
+
+    container.addEventListener('mousedown', (e) => {
+        targetRadius = bigRadius;
+        if (!animating) {
+            animating = true;
+            animateCircle();
+        }
+    });
+
+    container.addEventListener('mouseup', () => {
+        targetRadius = radius;
+        if (!animating) {
+            animating = true;
+            animateCircle();
+        }
+    });
+
+    function animateCircle() {
+        if (!animating) return;
+
+        currentRadius += (targetRadius - currentRadius) * 0.2;
+        clearImg.style.clipPath = `circle(${currentRadius}px at ${mouseX}px ${mouseY}px)`;
+
+        if (Math.abs(currentRadius - targetRadius) > 0.5) {
+            requestAnimationFrame(animateCircle);
+        } else {
+            currentRadius = targetRadius;
+            clearImg.style.clipPath = `circle(${currentRadius}px at ${mouseX}px ${mouseY}px)`;
+            animating = false;
+        }
+    }
+
+</script>
+
