@@ -34,8 +34,10 @@
                     // -------------------------------------------------------- calculate actual hotspot positions
                     const { offsetWidth, offsetHeight } = DIV;
                     // -------------------------------------------------------- parse radius (support percentages)
-                    const radiusPixels = parseCoord(r, Math.min(offsetWidth, offsetHeight));
-                    const radiusPercent = String(r).endsWith('%') ? parseFloat(r) : (radiusPixels / Math.min(offsetWidth, offsetHeight) * 100);
+                    // For CSS clip-path circle, percentage is relative to the distance from center to farthest corner
+                    // But we'll use min dimension for simplicity and consistency
+                    const minDimension = Math.min(offsetWidth, offsetHeight);
+                    const radiusPixels = parseCoord(r, minDimension);
                     // -------------------------------------------------------- find nearby hotspots
                     const spotted = HOTSPOTS
                         .map(({ node, x, y }) => ({ node, x: parseCoord(x, offsetWidth), y: parseCoord(y, offsetHeight) }))
@@ -45,13 +47,12 @@
                     // -------------------------------------------------------- calculate percentages
                     const xPercent = offsetWidth ? (x / offsetWidth * 100) : 0;
                     const yPercent = offsetHeight ? (y / offsetHeight * 100) : 0;
-                    console.log(radiusPercent)
-                    // -------------------------------------------------------- style CSS! circle
-                    CLEARIMG.style.clipPath = `circle(${radiusPercent}% at ${xPercent}% ${yPercent}%)`; // apply CSS clipPath with percentages
+                    // -------------------------------------------------------- style CSS! circle (use same radius for both)
+                    CLEARIMG.style.clipPath = `circle(${radiusPixels}px at ${xPercent}% ${yPercent}%)`; // Use pixels for consistency
                     // -------------------------------------------------------- position SVG circle (uses pixels)
                     CIRCLE.setAttribute('cx', x);
                     CIRCLE.setAttribute('cy', y);
-                    CIRCLE.setAttribute('r', radiusPixels || 0); // Ensure no NaN
+                    CIRCLE.setAttribute('r', radiusPixels || 0); // Now matches clip-path!
                     // console.log('clipCircle:', r, x, y, spotted);
                     // -------------------------------------------------------- show hotspot label
                     // shadowDOM is configured for Manual SLOT assigment
