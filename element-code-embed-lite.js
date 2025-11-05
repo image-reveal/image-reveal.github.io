@@ -92,6 +92,10 @@
                     part: "textarea",
                 })
             );
+            this.textarea.setAttribute("autocapitalize", this.getAttribute("autocapitalize") || "off");
+            this.textarea.setAttribute("autocomplete", this.getAttribute("autocomplete") || "off");
+            this.textarea.setAttribute("autocorrect", this.getAttribute("autocorrect") || "off");
+            this.textarea.setAttribute("spellcheck", this.getAttribute("spellcheck") || "false");
             this.fetch();
         }
         // ==================================================================== fitrows
