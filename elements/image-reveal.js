@@ -12,7 +12,7 @@
                 const imgsrc = this.getAttribute('src') || '';
                 const blurredCSS = `filter:blur(${this.getAttribute('blur') || 5}px)`;
                 const minimal_radius = this.getAttribute('minradius') || '10%';
-                const maximum_radius = this.getAttribute('maxradius') || '10%';
+                const maximum_radius = this.getAttribute('maxradius') || '20%';
                 const stroke = this.getAttribute('stroke') || "white";
                 // ------------------------------------------------------------ HELPER FUNCTIONS CREATE DOM
                 // best helper function ever:
